@@ -15,6 +15,7 @@
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
+            position: relative; /* To make overlay positioning work */
         }
         .score-container {
             background-color: #fff;
@@ -23,6 +24,8 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 700px;
+            position: relative; /* For z-index context */
+            z-index: 10; /* Ensure it's above the overlay initially */
         }
         h1 {
             text-align: center;
@@ -136,6 +139,39 @@
             font-weight: bold;
             color: #495057;
         }
+        #winnerOverlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            justify-content: center;
+            align-items: center;
+            z-index: 20; /* Above everything else */
+            flex-direction: column;
+            gap: 20px;
+        }
+        #winnerImage {
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        #closeOverlay {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        #closeOverlay:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -201,34 +237,50 @@
                 <span>Toby</span>
                 <span>Aislinn</span>
             </div>
-            <p>YOU MAY NOT RECOUNT YOUR BLITZ PILE AFTER DEALING</p>
             <div id="logBody">
                 </div>
         </div>
     </div>
 
+    <div id="winnerOverlay">
+        <img id="winnerImage" src="https://via.placeholder.com/300" alt="Winner!">
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
-    
+
     <script>
         const players = [1, 2, 3, 4];
         const playerNames = ["Jordon", "Reah", "Toby", "Aislinn"];
         let totalScores = [0, 0, 0, 0];
         let roundNumber = 0;
-        
+        let gameEnded = false; // Flag to prevent multiple winner announcements
+
         // Initialize confetti
         const jsConfetti = new JSConfetti();
+
+        // Placeholder image URLs - UPDATE THESE!
+        const winnerImageUrls = {
+            "Jordon": "https://via.placeholder.com/300?text=Jordon",
+            "Reah": "https://via.placeholder.com/300?text=Reah",
+            "Toby": "https://via.placeholder.com/300?text=Toby",
+            "Aislinn": "https://via.placeholder.com/300?text=Aislinn"
+        };
+
+        const winnerOverlay = document.getElementById('winnerOverlay');
+        const winnerImage = document.getElementById('winnerImage');
 
         document.getElementById('updateScoresBtn').addEventListener('click', updateScores);
         document.getElementById('resetScoresBtn').addEventListener('click', resetGame);
 
         function updateScores() {
+            if (gameEnded) return;
+
             const currentScores = [];
             let someoneScored = false;
             roundNumber++;
 
             players.forEach((player, index) => {
                 const roundPointsInput = document.getElementById(`roundPoints${player}`);
-                // Use the OR operator to default to 0 if the input is empty or not a number
                 const roundPointsValue = parseInt(roundPointsInput.value) || 0;
                 
                 currentScores.push(roundPointsValue);
@@ -238,10 +290,7 @@
                 }
 
                 totalScores[index] += roundPointsValue;
-                
                 document.getElementById(`score${player}`).textContent = totalScores[index];
-                
-                // Clear the input field for the next round
                 roundPointsInput.value = "";
             });
 
@@ -249,22 +298,31 @@
                 logRoundScores(currentScores);
             }
             
-            // Check for the winning score and trigger confetti
             checkWinningScore();
         }
 
         function checkWinningScore() {
             players.forEach((player, index) => {
-                if (totalScores[index] >= 75) {
+                if (totalScores[index] >= 75 && !gameEnded) {
+                    gameEnded = true;
+                    const winnerName = playerNames[index];
+                    winnerImage.src = winnerImageUrls[winnerName] || "https://via.placeholder.com/300?text=Winner!";
+                    winnerOverlay.style.display = 'flex';
                     jsConfetti.addConfetti({
                         confettiNumber: 200,
                         confettiRadius: 5,
                         confettiColors: [
                             '#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7',
                         ],
-                        // You can also add emojis!
-                        // emojis: ['🎉', '🥳', '✨', '🎈'],
                     });
+                    
+                    const closeButton = document.createElement('button');
+                    closeButton.id = 'closeOverlay';
+                    closeButton.textContent = 'Close';
+                    closeButton.addEventListener('click', () => {
+                        winnerOverlay.style.display = 'none';
+                    });
+                    winnerOverlay.appendChild(closeButton);
                 }
             });
         }
@@ -292,11 +350,17 @@
             if (confirm("Are you sure you want to reset the game? All scores will be cleared.")) {
                 totalScores = [0, 0, 0, 0];
                 roundNumber = 0;
+                gameEnded = false;
                 players.forEach((player) => {
                     document.getElementById(`score${player}`).textContent = 0;
                     document.getElementById(`roundPoints${player}`).value = "";
                 });
                 document.getElementById('logBody').innerHTML = '';
+                winnerOverlay.style.display = 'none';
+                const closeButton = document.getElementById('closeOverlay');
+                if (closeButton) {
+                    closeButton.remove();
+                }
             }
         }
     </script>
