@@ -150,7 +150,7 @@
             </div>
             <div class="input-group">
                 <label for="roundPoints1">Points:</label>
-                <input type="number" id="roundPoints1" value="0">
+                <input type="number" id="roundPoints1">
             </div>
         </div>
 
@@ -161,7 +161,7 @@
             </div>
             <div class="input-group">
                 <label for="roundPoints2">Points:</label>
-                <input type="number" id="roundPoints2" value="0">
+                <input type="number" id="roundPoints2">
             </div>
         </div>
 
@@ -172,7 +172,7 @@
             </div>
             <div class="input-group">
                 <label for="roundPoints3">Points:</label>
-                <input type="number" id="roundPoints3" value="0">
+                <input type="number" id="roundPoints3">
             </div>
         </div>
 
@@ -183,7 +183,7 @@
             </div>
             <div class="input-group">
                 <label for="roundPoints4">Points:</label>
-                <input type="number" id="roundPoints4" value="0">
+                <input type="number" id="roundPoints4">
             </div>
         </div>
 
@@ -206,11 +206,16 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+    
     <script>
         const players = [1, 2, 3, 4];
         const playerNames = ["Jordon", "Reah", "Toby", "Aislinn"];
         let totalScores = [0, 0, 0, 0];
         let roundNumber = 0;
+        
+        // Initialize confetti
+        const jsConfetti = new JSConfetti();
 
         document.getElementById('updateScoresBtn').addEventListener('click', updateScores);
         document.getElementById('resetScoresBtn').addEventListener('click', resetGame);
@@ -222,6 +227,7 @@
 
             players.forEach((player, index) => {
                 const roundPointsInput = document.getElementById(`roundPoints${player}`);
+                // Use the OR operator to default to 0 if the input is empty or not a number
                 const roundPointsValue = parseInt(roundPointsInput.value) || 0;
                 
                 currentScores.push(roundPointsValue);
@@ -234,12 +240,32 @@
                 
                 document.getElementById(`score${player}`).textContent = totalScores[index];
                 
-                roundPointsInput.value = "0";
+                // Clear the input field for the next round
+                roundPointsInput.value = "";
             });
 
             if (someoneScored) {
                 logRoundScores(currentScores);
             }
+            
+            // Check for the winning score and trigger confetti
+            checkWinningScore();
+        }
+
+        function checkWinningScore() {
+            players.forEach((player, index) => {
+                if (totalScores[index] >= 75) {
+                    jsConfetti.addConfetti({
+                        confettiNumber: 200,
+                        confettiRadius: 5,
+                        confettiColors: [
+                            '#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7',
+                        ],
+                        // You can also add emojis!
+                        // emojis: ['🎉', '🥳', '✨', '🎈'],
+                    });
+                }
+            });
         }
 
         function logRoundScores(scores) {
@@ -267,7 +293,7 @@
                 roundNumber = 0;
                 players.forEach((player) => {
                     document.getElementById(`score${player}`).textContent = 0;
-                    document.getElementById(`roundPoints${player}`).value = 0;
+                    document.getElementById(`roundPoints${player}`).value = "";
                 });
                 document.getElementById('logBody').innerHTML = '';
             }
